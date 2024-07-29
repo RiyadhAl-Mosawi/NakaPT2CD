@@ -1,0 +1,12 @@
+useDynLib(NakaPT2CD, .registration=TRUE)
+importFrom(Rcpp, evalCpp)
+importFrom(VGAM, pnaka)
+importFrom(VGAM, dnaka)
+importFrom(VGAM, qnaka)
+importFrom(pracma, incgam)
+importFrom(coda, HPDinterval)
+importFrom(coda, as.mcmc)
+import(roptim)
+import(progress)
+
+exportPattern("^[[:alpha:]]+")
