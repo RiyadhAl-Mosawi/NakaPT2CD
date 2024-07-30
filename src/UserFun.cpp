@@ -32,29 +32,21 @@ using namespace roptim;
   
 // [[Rcpp::export]]
 Rcpp::List Estim(arma::vec True_Par,
-                 arma::vec X, 
-                 arma::vec R, 
+                 arma::vec X, arma::vec R, 
                  double l, double u, double t, double gm,
-                 arma::vec para, 
-                 std::string type, 
-                 arma::vec lw,
-                 arma::vec up,
+                 arma::vec para,std::string type, 
+                 arma::vec lw, arma::vec up,
                  std::string method) {
   
   LogObjective rb(X,R,type);
   Roptim<LogObjective> opt(method);
   opt.control.trace = 0;
   opt.set_hessian(true);
-  //arma::vec lw={0,0};
-  //arma::vec up={10,10};
-  //opt.set_lower(lw);
-  //opt.set_upper(up); 
   opt.minimize(rb, para);
   double par_nu=opt.par()[0];
   double par_xi=opt.par()[1];
   double par_spmk=spmk_fun({par_nu,par_xi},l,u,t,gm);
   Rcpp::NumericVector par={par_nu,par_xi,par_spmk};
-  //Rcpp::NumericVector par   = as<NumericVector>(wrap(opt.par()));
   Rcpp::NumericMatrix hess  = as<NumericMatrix>(wrap(opt.hessian()));
   Rcpp::NumericMatrix CI(3,4);
   arma::mat v=arma::inv(opt.hessian());
@@ -115,9 +107,7 @@ Rcpp::List EM_Alg(Rcpp::NumericVector True_Par,
   int it=1;
   double val=0;
   Rcpp::NumericVector init={0.51,2*para[0]};
-  //Rcout<<mle<<endl;
   while(dif>tol&&it<=MaxIter){
-    
     E0 f0(nu, xi);
     E1 f1(nu, xi);
     E2 f2(nu, xi);
@@ -137,16 +127,10 @@ Rcpp::List EM_Alg(Rcpp::NumericVector True_Par,
     };
     Rcpp::NumericVector ZZ1=Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(Z1));
     Rcpp::NumericVector ZZ2=Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(Z2));
-    //Rcout<<"Z1"<<Z1<<endl;
-    //Rcout<<"Z2"<<Z2<<endl;
     xi=0.0;
-    for(int i=0;i<m;i++) 
+    for(int i=0;i<m;i++){ 
       xi+=(X(i)*X(i)+R(i)*ZZ2(i))/n;
-    //Rcout<<"xi="<<xi<<endl;
-    //Rcout<<"f="<<cscore(nu,xi,X,R,ZZ1)<<endl;
-    //Rcout<<"f="<<cscore(init[0],xi,X,R,ZZ1)<<endl;
-    //Rcout<<"f="<<cscore(init[1],xi,X,R,ZZ1)<<endl;
-    
+    };
     Rcpp::Environment base("package:stats"); 
     Rcpp::Function em = base["uniroot"];
     Rcpp::List res = em(Rcpp::_["f"]     = Rcpp::InternalFunction(&cscore),
@@ -155,19 +139,11 @@ Rcpp::List EM_Alg(Rcpp::NumericVector True_Par,
                         Rcpp::_["X"]=X,
                         Rcpp::_["R"]=R,
                         Rcpp::_["Z"]=ZZ1);
-    //Rcout<<"nu="<<res<<endl;
     nu=res(0);
-    //Rcout<<"(xi,nu)="<<nu<<xi<<endl;
-    //Roptim<CLogLike> opt("L-BFGS-B");
-    //opt.control.trace = 0;
-    //opt.set_lower(lw);
-    //opt.set_upper(up);
-    //opt.minimize(rb, para);
     dif=abs(nu-mle(0))+abs(xi-mle(1));
     it+=1;
     mle(0)=nu;
     mle(1)=xi;
-    //val=value;
     if(verbose>0){
       printf("%f %f %f\n", mle(0), mle(1), dif); 
     };
@@ -243,19 +219,16 @@ Rcpp::List MH_sample(Rcpp::NumericVector True_par,
   curr={curr_nu,curr_xi};
   int i=0; 
   while(i<MC_size){
-    //prop_nu=std::abs(rnorm(1,curr_nu,se(0))(0));
     prop_nu=std::exp(rnorm(1,std::log(curr_nu),se(0))(0));
     if(prop_nu==R_NaN) continue;
     if(prop_nu<=0.5) continue;
     if(prop_nu>fact*para(0)) continue;
-    //prop_xi=std::abs(rnorm(1,curr_xi,se(1))(0));
     prop_xi=std::exp(rnorm(1,std::log(curr_xi),se(1))(0));
     if(prop_xi==R_NaN) continue;
     if(prop_xi>fact*para(1)) continue;
     prop={prop_nu,prop_xi};
     curr={curr_nu,curr_xi};
     double per=post(prop)/post(curr);
-    //double per=post(prop)*prop_nu*prop_xi/(post(curr)*curr_nu*curr_xi);
     if(per==R_NaN) continue;
     del=std::min(1.0,per);
     dad=runif(1)(0);
@@ -268,17 +241,14 @@ Rcpp::List MH_sample(Rcpp::NumericVector True_par,
         MH_sel(i-MC_burn,0) =prop_nu;
         MH_sel(i-MC_burn,1) =prop_xi;
         MH_sel(i-MC_burn,2) =spmk_fun({prop_nu,prop_xi},l,u,t,gm);
-        //Rcout<<"i="<<i<<MH_sel(i-MC_burn,0)<<" "<<MH_sel(i-MC_burn,1)<<" "<<MH_sel(i-MC_burn,2)<<endl;
-        
+
         MH_gel(i-MC_burn,0) =pow(MH_sel(i-MC_burn,0),-q);
         MH_gel(i-MC_burn,1) =pow(MH_sel(i-MC_burn,1),-q);
         MH_gel(i-MC_burn,2) =pow(MH_sel(i-MC_burn,2),-q);
-        //Rcout<<"i="<<i<<MH_gel(i-MC_burn,0)<<" "<<MH_gel(i-MC_burn,1)<<" "<<MH_gel(i-MC_burn,2)<<endl;
-        
+
         MH_lin(i-MC_burn,0) =std::exp(-c*MH_sel(i-MC_burn,0));
         MH_lin(i-MC_burn,1) =std::exp(-c*MH_sel(i-MC_burn,1));
         MH_lin(i-MC_burn,2) =std::exp(-c*MH_sel(i-MC_burn,2));
-        //Rcout<<"i="<<i<<MH_lin(i-MC_burn,0)<<" "<<MH_lin(i-MC_burn,1)<<" "<<MH_lin(i-MC_burn,2)<<endl;
       }
     p.increment(); 
     i+=1;
@@ -290,14 +260,17 @@ Rcpp::List MH_sample(Rcpp::NumericVector True_par,
   Rcpp::NumericVector bias_gel={est_gel(0)-True_par(0),est_gel(1)-True_par(1),est_gel(2)-True_par(2)};
   Rcpp::NumericVector bias_lin={est_lin(0)-True_par(0),est_lin(1)-True_par(1),est_lin(2)-True_par(2)};
   Rcpp::NumericMatrix HPD(3,4);
+  
   HPD(0,0)=my_HPD(my_as_mcmc(MH_sel(_,0)))(0);
   HPD(0,1)=my_HPD(my_as_mcmc(MH_sel(_,0)))(1);
   HPD(0,2)=my_HPD(my_as_mcmc(MH_sel(_,0)))(1)-my_HPD(my_as_mcmc(MH_sel(_,0)))(0);
   if(HPD(0,0)<=True_par(0) && True_par(0)<=HPD(0,1)) HPD(0,3)=1.0; 
+  
   HPD(1,0)=my_HPD(my_as_mcmc(MH_sel(_,1)))(0);
   HPD(1,1)=my_HPD(my_as_mcmc(MH_sel(_,1)))(1);
   HPD(1,2)=my_HPD(my_as_mcmc(MH_sel(_,1)))(1)-my_HPD(my_as_mcmc(MH_sel(_,1)))(0);
   if(HPD(1,0)<=True_par(1) && True_par(1)<=HPD(1,1)) HPD(1,3)=1.0; 
+  
   HPD(2,0)=my_HPD(my_as_mcmc(MH_sel(_,2)))(0);
   HPD(2,1)=my_HPD(my_as_mcmc(MH_sel(_,2)))(1);
   HPD(2,2)=my_HPD(my_as_mcmc(MH_sel(_,2)))(1)-my_HPD(my_as_mcmc(MH_sel(_,2)))(0);
@@ -313,199 +286,6 @@ Rcpp::List MH_sample(Rcpp::NumericVector True_par,
     Rcpp::Named("MH_sel")     =MH_sel,
     Rcpp::Named("MH_gel")     =MH_gel,
     Rcpp::Named("MH_lin")     =MH_lin,
-    Rcpp::Named("HPD")        =HPD);
-};
-
-// based on MH samples and LF (or PSF) functions
-// [[Rcpp::export]]
-Rcpp::List MH1_sample(Rcpp::NumericVector True_par,
-                     Rcpp::NumericVector X,
-                     Rcpp::NumericVector R,
-                     double l, double u, double t, double gm,
-                     double q, double c,
-                     Rcpp::NumericVector para,
-                     std::string type,
-                     int MC_size,int MC_burn,
-                     NumericMatrix se,
-                     double fact, 
-                     bool verbose=false, 
-                     bool display_progress=true){
-  arma::vec XX=as<arma::vec>(wrap(X));
-  arma::vec RR=as<arma::vec>(wrap(R));
-  Rcpp::NumericMatrix MH_sel(MC_size-MC_burn,3);
-  Rcpp::NumericMatrix MH_gel(MC_size-MC_burn,3);
-  Rcpp::NumericMatrix MH_lin(MC_size-MC_burn,3);
-  arma::vec prop;
-  arma::vec curr;
-  double prop_nu,prop_xi;
-  double curr_nu=para[0];
-  double curr_xi=para[1];
-  double del,dad;
-  int rho=0;
-  
-  Posterior post(XX,RR,type);
-  Progress p(MC_size, display_progress);
-  curr={curr_nu,curr_xi};
-  int i=0; 
-  while(i<MC_size){
-    prop=my_rmvnorm(1,Rcpp::NumericVector(Rcpp::wrap(curr)),se);
-    //prop_nu=std::exp(rnorm(1,std::log(curr_nu),se(0))(0));
-    prop_nu=std::abs(prop(0));
-    prop_xi=std::abs(prop(1));
-    if(prop_nu==R_NaN) continue;
-    if(prop_nu<=0.5) continue;
-    if(prop_nu>fact*para(0)) continue;
-    //prop_xi=std::abs(rnorm(1,curr_xi,se(1))(0));
-    //prop_xi=std::exp(rnorm(1,std::log(curr_xi),se(1))(0));
-    if(prop_xi==R_NaN) continue;
-    if(prop_xi>fact*para(1)) continue;
-    //prop={prop_nu,prop_xi};
-    curr={curr_nu,curr_xi};
-    double per=post(prop)/post(curr);
-    //double per=post(prop)*prop_nu*prop_xi/(post(curr)*curr_nu*curr_xi);
-    if(per==R_NaN) continue;
-    del=std::min(1.0,per);
-    dad=runif(1)(0);
-    rho=0;
-    if(dad<del) rho=1;
-    prop_nu =prop_nu*rho+(1-rho)*curr_nu; 
-    prop_xi =prop_xi*rho+(1-rho)*curr_xi; 
-    if(verbose==true) std::cout<<"i="<<i<<" Estimate SEL= "<<prop_nu<<" "<<prop_xi<<" "<<spmk_fun({prop_nu,prop_xi},l,u,t,gm)<<std::endl; 
-    if(i>=MC_burn){
-      MH_sel(i-MC_burn,0) =prop_nu;
-      MH_sel(i-MC_burn,1) =prop_xi;
-      MH_sel(i-MC_burn,2) =spmk_fun({prop_nu,prop_xi},l,u,t,gm);
-      //Rcout<<"i="<<i<<MH_sel(i-MC_burn,0)<<" "<<MH_sel(i-MC_burn,1)<<" "<<MH_sel(i-MC_burn,2)<<endl;
-      
-      MH_gel(i-MC_burn,0) =pow(MH_sel(i-MC_burn,0),-q);
-      MH_gel(i-MC_burn,1) =pow(MH_sel(i-MC_burn,1),-q);
-      MH_gel(i-MC_burn,2) =pow(MH_sel(i-MC_burn,2),-q);
-      //Rcout<<"i="<<i<<MH_gel(i-MC_burn,0)<<" "<<MH_gel(i-MC_burn,1)<<" "<<MH_gel(i-MC_burn,2)<<endl;
-      
-      MH_lin(i-MC_burn,0) =std::exp(-c*MH_sel(i-MC_burn,0));
-      MH_lin(i-MC_burn,1) =std::exp(-c*MH_sel(i-MC_burn,1));
-      MH_lin(i-MC_burn,2) =std::exp(-c*MH_sel(i-MC_burn,2));
-      //Rcout<<"i="<<i<<MH_lin(i-MC_burn,0)<<" "<<MH_lin(i-MC_burn,1)<<" "<<MH_lin(i-MC_burn,2)<<endl;
-    }
-    p.increment(); 
-    i+=1;
-  };
-  Rcpp::NumericVector est_sel={mean(MH_sel(_,0)),mean(MH_sel(_,1)),mean(MH_sel(_,2))};
-  Rcpp::NumericVector est_gel={pow(mean(MH_gel(_,0)),-1/q),pow(mean(MH_gel(_,1)),-1/q),pow(mean(MH_gel(_,2)),-1/q)};
-  Rcpp::NumericVector est_lin={(-1/c)*log(mean(MH_lin(_,0))),(-1/c)*log(mean(MH_lin(_,1))),(-1/c)*log(mean(MH_lin(_,2)))};
-  Rcpp::NumericVector bias_sel={est_sel(0)-True_par(0),est_sel(1)-True_par(1),est_sel(2)-True_par(2)};
-  Rcpp::NumericVector bias_gel={est_gel(0)-True_par(0),est_gel(1)-True_par(1),est_gel(2)-True_par(2)};
-  Rcpp::NumericVector bias_lin={est_lin(0)-True_par(0),est_lin(1)-True_par(1),est_lin(2)-True_par(2)};
-  Rcpp::NumericMatrix HPD(3,4);
-  HPD(0,0)=my_HPD(my_as_mcmc(MH_sel(_,0)))(0);
-  HPD(0,1)=my_HPD(my_as_mcmc(MH_sel(_,0)))(1);
-  HPD(0,2)=my_HPD(my_as_mcmc(MH_sel(_,0)))(1)-my_HPD(my_as_mcmc(MH_sel(_,0)))(0);
-  if(HPD(0,0)<=True_par(0) && True_par(0)<=HPD(0,1)) HPD(0,3)=1.0; 
-  HPD(1,0)=my_HPD(my_as_mcmc(MH_sel(_,1)))(0);
-  HPD(1,1)=my_HPD(my_as_mcmc(MH_sel(_,1)))(1);
-  HPD(1,2)=my_HPD(my_as_mcmc(MH_sel(_,1)))(1)-my_HPD(my_as_mcmc(MH_sel(_,1)))(0);
-  if(HPD(1,0)<=True_par(1) && True_par(1)<=HPD(1,1)) HPD(1,3)=1.0; 
-  HPD(2,0)=my_HPD(my_as_mcmc(MH_sel(_,2)))(0);
-  HPD(2,1)=my_HPD(my_as_mcmc(MH_sel(_,2)))(1);
-  HPD(2,2)=my_HPD(my_as_mcmc(MH_sel(_,2)))(1)-my_HPD(my_as_mcmc(MH_sel(_,2)))(0);
-  if(HPD(2,0)<=True_par(2) && True_par(2)<=HPD(2,1)) HPD(2,3)=1.0; 
-  
-  return Rcpp::List::create(
-    Rcpp::Named("est_sel")    =est_sel,
-    Rcpp::Named("est_gel")    =est_gel,
-    Rcpp::Named("est_lin")    =est_lin,
-    Rcpp::Named("bias_sel")   =bias_sel,
-    Rcpp::Named("bias_gel")   =bias_gel,
-    Rcpp::Named("bias_lin")   =bias_lin,
-    Rcpp::Named("MH_sel")     =MH_sel,
-    Rcpp::Named("MH_gel")     =MH_gel,
-    Rcpp::Named("MH_lin")     =MH_lin,
-    Rcpp::Named("HPD")        =HPD);
-};
-
-// Function to compute Bayesian estimation and HPD using MCMC technique 
-// based on ARS samples and LF (or PSF) functions
-// [[Rcpp::export]]
-Rcpp::List ARS_sample(Rcpp::NumericVector True_par,
-                      Rcpp::NumericVector X,
-                      Rcpp::NumericVector R,
-                     double l, double u, double t, double gm,
-                     double q, double c,
-                     Rcpp::NumericVector para,
-                     std::string Type,
-                     int MC_size,int MC_burn,
-                     double fact, double mn, double mx,
-                     bool verbose=false, 
-                     bool display_progress=true){
-  Rcpp::NumericMatrix MC_sel(MC_size-MC_burn,3);
-  Rcpp::NumericMatrix MC_gel(MC_size-MC_burn,3);
-  Rcpp::NumericMatrix MC_lin(MC_size-MC_burn,3);
-  arma::vec prop;
-  arma::vec curr;
-
-  double G_nu=para(0);
-  double G_xi=para(1);
-  double G_spmk=spmk_fun(para,l,u,t,gm);
-  Progress p(MC_size, display_progress);
-  int i=0; 
-  while(i<MC_size){
-    G_nu=ARSamp(1,mn,mx,{0.51,fact*para(0)},R,X,Type,1,G_xi,0.000001)[0];
-    if(G_nu==R_NaN) G_nu=para(0);
-    if(G_nu<=0.5) G_nu=para(0);
-    if(G_nu>fact*para(0)) G_nu=para(0);
-    
-    G_xi=ARSamp(1,mn,mx,{0.3,fact*para(1)},R,X,Type,2,G_nu,0.000001)[0];
-    if(G_xi==R_NaN) G_xi=para(1);
-    if(G_xi<=0.5) G_xi=para(2);
-    if(G_xi>fact*para(1)) G_xi=para(1);
-    
-    if(verbose==true) std::cout<<"i="<<i<<" Sample=("<<G_nu<<","<<G_xi<<","<<spmk_fun({G_nu,G_xi},l,u,t,gm)<<")"<<std::endl; 
-    if(i>=MC_burn){
-      MC_sel(i-MC_burn,0) =G_nu;
-      MC_sel(i-MC_burn,1) =G_xi;
-      MC_sel(i-MC_burn,2) =spmk_fun({G_nu,G_xi},l,u,t,gm);
-
-      MC_gel(i-MC_burn,0) =pow(MC_sel(i-MC_burn,0),-q);
-      MC_gel(i-MC_burn,1) =pow(MC_sel(i-MC_burn,1),-q);
-      MC_gel(i-MC_burn,2) =pow(MC_sel(i-MC_burn,2),-q);
-
-      MC_lin(i-MC_burn,0) =std::exp(-c*MC_sel(i-MC_burn,0));
-      MC_lin(i-MC_burn,1) =std::exp(-c*MC_sel(i-MC_burn,1));
-      MC_lin(i-MC_burn,2) =std::exp(-c*MC_sel(i-MC_burn,2));
-    }
-    p.increment(); 
-    i+=1;
-  };
-  Rcpp::NumericVector est_sel={mean(MC_sel(Rcpp::_,0)),mean(MC_sel(Rcpp::_,1)),mean(MC_sel(Rcpp::_,2))};
-  Rcpp::NumericVector est_gel={pow(mean(MC_gel(Rcpp::_,0)),-1/q),pow(mean(MC_gel(Rcpp::_,1)),-1/q),pow(mean(MC_gel(Rcpp::_,2)),-1/q)};
-  Rcpp::NumericVector est_lin={(-1/c)*log(mean(MC_lin(Rcpp::_,0))),(-1/c)*log(mean(MC_lin(Rcpp::_,1))),(-1/c)*log(mean(MC_lin(Rcpp::_,2)))};
-  Rcpp::NumericVector bias_sel={est_sel(0)-True_par(0),est_sel(1)-True_par(1),est_sel(2)-True_par(2)};
-  Rcpp::NumericVector bias_gel={est_gel(0)-True_par(0),est_gel(1)-True_par(1),est_gel(2)-True_par(2)};
-  Rcpp::NumericVector bias_lin={est_lin(0)-True_par(0),est_lin(1)-True_par(1),est_lin(2)-True_par(2)};
-  Rcpp::NumericMatrix HPD(3,4);
-  HPD(0,0)=my_HPD(my_as_mcmc(MC_sel(Rcpp::_,0)))(0);
-  HPD(0,1)=my_HPD(my_as_mcmc(MC_sel(Rcpp::_,0)))(1);
-  HPD(0,2)=my_HPD(my_as_mcmc(MC_sel(Rcpp::_,0)))(1)-my_HPD(my_as_mcmc(MC_sel(Rcpp::_,0)))(0);
-  if(HPD(0,0)<=True_par(0) && True_par(0)<=HPD(0,1)) HPD(0,3)=1.0; 
-  HPD(1,0)=my_HPD(my_as_mcmc(MC_sel(Rcpp::_,1)))(0);
-  HPD(1,1)=my_HPD(my_as_mcmc(MC_sel(Rcpp::_,1)))(1);
-  HPD(1,2)=my_HPD(my_as_mcmc(MC_sel(Rcpp::_,1)))(1)-my_HPD(my_as_mcmc(MC_sel(Rcpp::_,1)))(0);
-  if(HPD(1,0)<=True_par(1) && True_par(1)<=HPD(1,1)) HPD(1,3)=1.0; 
-  HPD(2,0)=my_HPD(my_as_mcmc(MC_sel(Rcpp::_,2)))(0);
-  HPD(2,1)=my_HPD(my_as_mcmc(MC_sel(Rcpp::_,2)))(1);
-  HPD(2,2)=my_HPD(my_as_mcmc(MC_sel(Rcpp::_,2)))(1)-my_HPD(my_as_mcmc(MC_sel(Rcpp::_,2)))(0);
-  if(HPD(2,0)<=G_spmk && G_spmk<=HPD(2,1)) HPD(2,3)=1.0; 
-
-  return Rcpp::List::create(
-    Rcpp::Named("est_sel")    =est_sel,
-    Rcpp::Named("est_gel")    =est_gel,
-    Rcpp::Named("est_lin")    =est_lin,
-    Rcpp::Named("bias_sel")   =bias_sel,
-    Rcpp::Named("bias_gel")   =bias_gel,
-    Rcpp::Named("bias_lin")   =bias_lin,
-    Rcpp::Named("MC_sel")     =MC_sel,
-    Rcpp::Named("MC_gel")     =MC_gel,
-    Rcpp::Named("MC_lin")     =MC_lin,
     Rcpp::Named("HPD")        =HPD);
 };
 

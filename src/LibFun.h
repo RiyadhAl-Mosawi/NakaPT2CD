@@ -16,55 +16,15 @@ arma::vec arma_sort(arma::vec x) {
 }
 
 // [[Rcpp::export]]
-Rcpp::NumericVector GenData(Rcpp::NumericVector para,
-                            Rcpp::NumericVector R){
-  int m=R.size();
-  Rcpp::NumericVector w(m);  
-  Rcpp::NumericVector u(m);  
-  Rcpp::NumericVector v(m);  
-  Rcpp::NumericVector t(m);  
-  Rcpp::NumericVector vv(m);  
-  Rcpp::NumericVector RR(m);  
-  w=Rcpp::runif(m,0.0,1.0);
-  for(int i=0;i<m;i++){
-    RR(i)=0;
-    for(int j=m-i-1;j<m;j++){
-      RR(i)+=R(j);
-    }
-    v(i)=std::pow(w(i),1/(i+RR(i)));
-  }
-  for(int i=0;i<m;i++){
-    vv(i)=1;
-    for(int j=m-i-1;j<m;j++){
-      vv(i)*=v(j);
-    }
-    u(i)=1-vv(i);
-    t(i)=nakagami.qnt(u(i),para);
-  };
-  return t;
-};
-
-// [[Rcpp::export]]
-NumericVector my_rmvnorm(double m, NumericVector mn, NumericMatrix sg){
-  
-  // Obtaining namespace of mvtnorm package
-  Environment pkg = Environment::namespace_env("mvtnorm");
-  
-  // Picking up rmvnorm() function from mvtnorm package
-  Function f = pkg["rmvnorm"];
-  return f(m, Named("mean")=mn, Named("sigma")=sg);
-}
-
-// [[Rcpp::export]]
-double MSE(double xi,Rcpp::NumericVector  xi_hat, std::string type, double q){
-  int n=xi_hat.size();
+double MSE(double eta,Rcpp::NumericVector  eta_hat, std::string type, double q){
+  int n=eta_hat.size();
   Rcpp::NumericVector mse(n);
   for(int i=0;i<n;i++){
-    if(type=="SEL") mse(i)=pow(xi_hat(i)-xi,2);
-    if(type=="GEL") mse(i)= pow(xi_hat(i)/xi,q)-q*std::log(xi_hat(i)/xi)-1;
-    if(type=="LINEX") mse(i)=std::exp(q*(xi_hat(i)-xi))-q*(xi_hat(i)-xi)-1;
+    if(type=="SEL") mse(i)=pow(eta_hat(i)-eta,2);
+    if(type=="GEL") mse(i)= pow(eta_hat(i)/eta,q)-q*std::log(eta_hat(i)/eta)-1;
+    if(type=="LINEX") mse(i)=std::exp(q*(eta_hat(i)-eta))-q*(eta_hat(i)-eta)-1;
   };
-  return sum(mse)/xi_hat.size();
+  return sum(mse)/n;
 }
 
 double prior(Rcpp::NumericVector para){
@@ -467,113 +427,6 @@ public:
     };
 };
 
-
-// [[Rcpp::export]]
-arma::vec ARSamp(int n, double mn, double mx, arma::vec sp, 
-               Rcpp::NumericVector R,
-               Rcpp::NumericVector X,std::string type,
-               int NoPara, double para, 
-               double h){
-  if(sp(0)>sp(1)) sp={sp(1),sp(0)};
-  if(sp(0)==sp(1)) sp={sp(0),sp(0)+1};
-  if(n<=0) n=1;
-  if(mn>mx){
-    mn=0;mx=100000000;
-  }
-  arma::vec x_final(n);
-  double u,A1,A2,A3,A4,x_star,C1,C2,C3,acc,compareprop,err_est;
-  arma::vec XX=as<arma::vec>(wrap(X));
-  arma::vec RR=as<arma::vec>(wrap(R));
-  arma::vec Support,para1,para2,crosspoint,tangent,crossvalue,IntSum,cum0,cum;
-  arma::mat A(2,2);
-  arma::vec b(2);
-  int err_code,idx;
-  Rcpp::NumericVector rdm;
-  
-  LogPosterior logpost(XX,RR,type);
-  
-  for(int j=0;j<n;j++){
-    Support = sp;
-    u=0;
-    compareprop=-1;
-    while(u>compareprop){
-      tangent.resize(Support.size());
-      for(int i=0;i<Support.size();i++){ 
-        if(NoPara==1){
-          para1={Support(i) + h,para};
-          para2={Support(i) - h,para};
-        } else {
-          para1={para,Support(i) + h};
-          para2={para,Support(i) - h};
-        };
-        tangent(i)=(logpost(para1) - logpost(para2))/(2.0*h);
-      }
-      crosspoint.resize(Support.size()+1);
-      crosspoint(0)=mn;
-      crosspoint(crosspoint.size()-1)=mx;
-      crossvalue.resize(Support.size()-1);
-      for(int w=0;w<Support.size()-1;w++){
-        A(0,0)=tangent(w);
-        A(0,1)=-1;
-        A(1,0)=tangent(w+1); 
-        A(1,1)=-1;
-        if(NoPara==1){
-          para1={Support(w),para};
-          para2={Support(w+1),para};
-        } else {
-          para1={para,Support(w)};
-          para2={para,Support(w+1)};
-        }
-        b(0)=tangent(w)*Support(w)-logpost(para1);
-        b(1)=tangent(w+1)*Support(w+1)-logpost(para2);
-        crosspoint(w+1)=(A(1,1)*b(0)-A(0,1)*b(1))/(A(0,0)*A(1,1)-A(0,1)*A(1,0));
-        crossvalue(w)=(-A(1,0)*b(0)+A(0,0)*b(1))/(A(0,0)*A(1,1)-A(0,1)*A(1,0));
-      }
-      IntSum.resize(Support.size());
-      for(int w=0;w<IntSum.size();w++){
-        C1=tangent(w);
-        C2=Support(w);
-        if(NoPara==1) C3=logpost({Support(w),para}); else C3=logpost({para,Support(w)});
-        IntSum(w)=std::exp(C1*C2-C3)*(std::exp(-crosspoint(w)*C1)-std::exp(-crosspoint(w+1)*C1))/C1;
-      }
-      rdm =Rcpp::runif(1,0.0,1.0);
-      cum0.resize(IntSum.size());
-      cum0=cumsum(IntSum)/sum(IntSum);
-      cum.resize(cum0.size()+1);
-      for(int z = 0; z < cum.size(); z++){
-        if(z==0) cum(z)=0; else cum(z)=cum0(z-1);
-      }
-      idx=0;
-      for(int k=0;k<cum0.size();k++) if(rdm[0]<cum0(k)) {idx=k;break;} 
-      if(NoPara==1) para1={Support(idx),para}; else para1={para,Support(idx)};
-      A1=std::exp(tangent[idx]*Support[idx]-logpost(para1));
-      A2=std::exp(-tangent[idx]*crosspoint[idx]);
-      A3=sum(IntSum);
-      A4=-tangent[idx];
-      x_star=std::log((rdm[0]-cum[idx]+A1*A2/A3/A4)*A3*A4/A1)/A4;
-      u=Rcpp::runif(1,0.0,1.0)[0];
-      if(NoPara==1){
-        para1={Support(idx),para}; 
-        para2={x_star,para}; 
-      } else {
-        para1={para,Support(idx)};
-        para2={para,x_star};
-      }
-      compareprop =std::exp(-logpost(para2))/std::exp(-tangent(idx)*(x_star-Support(idx))-logpost(para1));
-      A1=Support.size();
-      Support.resize(A1+1) ;
-      Support(A1)=x_star;
-      Support=arma_sort(Support);
-    }
-    x_final(j)=x_star;
-  }
-  return x_final;
-}
-
-
-
-
-
 double cloglike(Rcpp::NumericVector para,
                 Rcpp::NumericVector X, 
                 Rcpp::NumericVector R,
@@ -611,8 +464,7 @@ public:
 // Information matrix using missing information principle
 // [[Rcpp::export]]
 NumericMatrix inform(Rcpp::NumericVector para, 
-                     Rcpp::NumericVector X, 
-                     Rcpp::NumericVector R, 
+                     Rcpp::NumericVector X, Rcpp::NumericVector R, 
                      double lower, double upper){
   double nu=para(0);
   double xi=para(1);

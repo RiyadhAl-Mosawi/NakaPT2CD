@@ -5,16 +5,8 @@ arma_sort <- function(x) {
     .Call(`_NakaPT2CD_arma_sort`, x)
 }
 
-GenData <- function(para, R) {
-    .Call(`_NakaPT2CD_GenData`, para, R)
-}
-
-my_rmvnorm <- function(m, mn, sg) {
-    .Call(`_NakaPT2CD_my_rmvnorm`, m, mn, sg)
-}
-
-MSE <- function(xi, xi_hat, type, q) {
-    .Call(`_NakaPT2CD_MSE`, xi, xi_hat, type, q)
+MSE <- function(eta, eta_hat, type, q) {
+    .Call(`_NakaPT2CD_MSE`, eta, eta_hat, type, q)
 }
 
 spmk_fun <- function(para, l, u, t, gm) {
@@ -65,10 +57,6 @@ my_HPD <- function(x) {
     .Call(`_NakaPT2CD_my_HPD`, x)
 }
 
-ARSamp <- function(n, mn, mx, sp, R, X, type, NoPara, para, h) {
-    .Call(`_NakaPT2CD_ARSamp`, n, mn, mx, sp, R, X, type, NoPara, para, h)
-}
-
 inform <- function(para, X, R, lower, upper) {
     .Call(`_NakaPT2CD_inform`, para, X, R, lower, upper)
 }
@@ -87,14 +75,6 @@ EM_Alg <- function(True_Par, X, R, l, u, t, gm, para, upper = 100, MaxIter = 100
 
 MH_sample <- function(True_par, X, R, l, u, t, gm, q, c, para, type, MC_size, MC_burn, se, fact, verbose = FALSE, display_progress = TRUE) {
     .Call(`_NakaPT2CD_MH_sample`, True_par, X, R, l, u, t, gm, q, c, para, type, MC_size, MC_burn, se, fact, verbose, display_progress)
-}
-
-MH1_sample <- function(True_par, X, R, l, u, t, gm, q, c, para, type, MC_size, MC_burn, se, fact, verbose = FALSE, display_progress = TRUE) {
-    .Call(`_NakaPT2CD_MH1_sample`, True_par, X, R, l, u, t, gm, q, c, para, type, MC_size, MC_burn, se, fact, verbose, display_progress)
-}
-
-ARS_sample <- function(True_par, X, R, l, u, t, gm, q, c, para, Type, MC_size, MC_burn, fact, mn, mx, verbose = FALSE, display_progress = TRUE) {
-    .Call(`_NakaPT2CD_ARS_sample`, True_par, X, R, l, u, t, gm, q, c, para, Type, MC_size, MC_burn, fact, mn, mx, verbose, display_progress)
 }
 
 TK <- function(True_para, X, R, L, U, T, GM, q, c, para, type) {

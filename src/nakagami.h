@@ -13,25 +13,25 @@ public:
   // The quantile function of Nakagami Dist
   double qnt(double w,Rcpp::NumericVector para){
     Rcpp::Function qnaka_rcpp("qnaka");
-    Rcpp::NumericVector res=qnaka_rcpp(w,para[1],para[0]);
+    Rcpp::NumericVector res=qnaka_rcpp(w,para[0],para[1]);
     return res[0];
   }
   // The density function of Nakagami Dist
   double pdf(double w,Rcpp::NumericVector para){
     Rcpp::Function dnaka_rcpp("dnaka");
-    Rcpp::NumericVector res=dnaka_rcpp(w,para[1],para[0]);
+    Rcpp::NumericVector res=dnaka_rcpp(w,para[0],para[1]);
     return res[0];
   }
   // The distribution function of Nakagami Dist
   double cdf(double w,Rcpp::NumericVector para){
     Rcpp::Function pnaka_rcpp("pnaka");
-    Rcpp::NumericVector res=pnaka_rcpp(w,para[1],para[0]);
+    Rcpp::NumericVector res=pnaka_rcpp(w,para[0],para[1]);
     return res[0];
   }
   // The survival function of Nakagami Dist
   double sur(double w,Rcpp::NumericVector para){
     Rcpp::Function pnaka_rcpp("pnaka");
-    Rcpp::NumericVector res=pnaka_rcpp(w,para[1],para[0]);
+    Rcpp::NumericVector res=pnaka_rcpp(w,para[0],para[1]);
     return 1.0-res[0];
   }
   // The mean of Nakagami Dist
