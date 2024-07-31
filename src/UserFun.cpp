@@ -106,7 +106,7 @@ Rcpp::List EM_Alg(Rcpp::NumericVector True_Par,
   double value=0;
   int it=1;
   double val=0;
-  Rcpp::NumericVector init={0.51,2*para[0]};
+  Rcpp::NumericVector init={0.51,2*para[1]};
   while(dif>tol&&it<=MaxIter){
     E0 f0(nu, xi);
     E1 f1(nu, xi);
@@ -140,15 +140,15 @@ Rcpp::List EM_Alg(Rcpp::NumericVector True_Par,
                         Rcpp::_["R"]=R,
                         Rcpp::_["Z"]=ZZ1);
     nu=res(0);
-    dif=abs(nu-mle(0))+abs(xi-mle(1));
+    dif=abs(nu-mle[0])+abs(xi-mle[1]);
     it+=1;
     mle(0)=nu;
     mle(1)=xi;
     if(verbose>0){
-      printf("%f %f %f\n", mle(0), mle(1), dif); 
+      printf("%f %f %f\n", mle[0], mle[1], dif); 
     };
   }
-  Rcpp::NumericVector Par={mle(0),mle(1),spmk_fun(mle,l,u,t,gm)};
+  Rcpp::NumericVector Par={mle[0],mle[1],spmk_fun(mle,l,u,t,gm)};
   Rcpp::NumericMatrix hess  = inform(mle,X,R,0,upper);
   arma::mat v=arma::inv(as<arma::mat>(wrap(hess)));
   double var_nu=v(0,0);

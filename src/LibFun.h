@@ -9,8 +9,8 @@ Nakagami nakagami;
 
 // [[Rcpp::export]]
 arma::vec arma_sort(arma::vec x) {
-  NumericVector xx=Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(x));
-  NumericVector y = clone(xx);
+  Rcpp::NumericVector xx=Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(x));
+  Rcpp::NumericVector y = clone(xx);
   std::sort(y.begin(), y.end());
   return as<arma::vec>(wrap(y));
 }
@@ -32,7 +32,7 @@ double prior(Rcpp::NumericVector para){
 } 
 
 // These classes are used to compute derivative of incomplete gamma
-class P1: public Func {
+class P1: public Func{
 private:
   double nu;
   double xi;

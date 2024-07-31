@@ -12,7 +12,7 @@ Gen_Data=function(nu,xi,R){
     for(j in (m-i+1):m)
       vv[i]=vv[i]*v[j]
     u[i]=1-vv[i]
-    t[i]=qnaka(u[i],nu,xi)
+    t[i]=qnaka(u[i],scale=xi,shape=nu)
   }
   return(sort(t))
 }
