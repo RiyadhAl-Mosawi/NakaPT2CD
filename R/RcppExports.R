@@ -5,20 +5,12 @@ arma_sort <- function(x) {
     .Call(`_NakaPT2CD_arma_sort`, x)
 }
 
-MSE <- function(eta, eta_hat, type, q) {
-    .Call(`_NakaPT2CD_MSE`, eta, eta_hat, type, q)
+MSE <- function(xi, xi_hat, type, q) {
+    .Call(`_NakaPT2CD_MSE`, xi, xi_hat, type, q)
 }
 
 spmk_fun <- function(para, l, u, t, gm) {
     .Call(`_NakaPT2CD_spmk_fun`, para, l, u, t, gm)
-}
-
-spmk_mu <- function(x, y) {
-    .Call(`_NakaPT2CD_spmk_mu`, x, y)
-}
-
-spmk_sig <- function(x, y) {
-    .Call(`_NakaPT2CD_spmk_sig`, x, y)
 }
 
 spmk_grad <- function(para, l, u, t, gm) {
@@ -49,14 +41,6 @@ logpostps <- function(para, X, R) {
     .Call(`_NakaPT2CD_logpostps`, para, X, R)
 }
 
-my_as_mcmc <- function(x) {
-    .Call(`_NakaPT2CD_my_as_mcmc`, x)
-}
-
-my_HPD <- function(x) {
-    .Call(`_NakaPT2CD_my_HPD`, x)
-}
-
 inform <- function(para, X, R, lower, upper) {
     .Call(`_NakaPT2CD_inform`, para, X, R, lower, upper)
 }
@@ -71,10 +55,6 @@ Estim <- function(True_Par, X, R, l, u, t, gm, para, type, lw, up, method) {
 
 EM_Alg <- function(True_Par, X, R, l, u, t, gm, para, upper = 100, MaxIter = 100L, tol = 0.0001, verbose = 0L) {
     .Call(`_NakaPT2CD_EM_Alg`, True_Par, X, R, l, u, t, gm, para, upper, MaxIter, tol, verbose)
-}
-
-MH_sample <- function(True_par, X, R, l, u, t, gm, q, c, para, type, MC_size, MC_burn, se, fact, verbose = FALSE, display_progress = TRUE) {
-    .Call(`_NakaPT2CD_MH_sample`, True_par, X, R, l, u, t, gm, q, c, para, type, MC_size, MC_burn, se, fact, verbose, display_progress)
 }
 
 TK <- function(True_para, X, R, L, U, T, GM, q, c, para, type) {

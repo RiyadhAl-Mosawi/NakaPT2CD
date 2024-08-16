@@ -3,6 +3,7 @@
 
 #include "gamma_fun.h"
 #include "nakagami.h"
+#include "t_dist.h"
 
 // The likelihood, ps and posteriors functions and their logarithms 
 Nakagami nakagami;
@@ -16,15 +17,15 @@ arma::vec arma_sort(arma::vec x) {
 }
 
 // [[Rcpp::export]]
-double MSE(double eta,Rcpp::NumericVector  eta_hat, std::string type, double q){
-  int n=eta_hat.size();
+double MSE(double xi,Rcpp::NumericVector  xi_hat, std::string type, double q){
+  int n=xi_hat.size();
   Rcpp::NumericVector mse(n);
   for(int i=0;i<n;i++){
-    if(type=="SEL") mse(i)=pow(eta_hat(i)-eta,2);
-    if(type=="GEL") mse(i)= pow(eta_hat(i)/eta,q)-q*std::log(eta_hat(i)/eta)-1;
-    if(type=="LINEX") mse(i)=std::exp(q*(eta_hat(i)-eta))-q*(eta_hat(i)-eta)-1;
+    if(type=="SEL") mse(i)=pow(xi_hat(i)-xi,2);
+    if(type=="GEL") mse(i)= pow(xi_hat(i)/xi,q)-q*std::log(xi_hat(i)/xi)-1;
+    if(type=="LINEX") mse(i)=std::exp(q*(xi_hat(i)-xi))-q*(xi_hat(i)-xi)-1;
   };
-  return sum(mse)/n;
+  return sum(mse)/xi_hat.size();
 }
 
 double prior(Rcpp::NumericVector para){
@@ -32,7 +33,7 @@ double prior(Rcpp::NumericVector para){
 } 
 
 // These classes are used to compute derivative of incomplete gamma
-class P1: public Func{
+class P1: public Func {
 private:
   double nu;
   double xi;
@@ -59,22 +60,9 @@ public:
 // The definition of S'_pmk function
 // [[Rcpp::export]]
 double spmk_fun(Rcpp::NumericVector para, double l, double u, double t, double gm){
-  return(R::qnorm(1.0-(1.0-(nakagami.cdf(u,para)-nakagami.cdf(l,para)))/2,0.0,1.0,1,0)/(3.0*std::sqrt(1.0+(2/(pow(para[1],2)*pow(gm,2)))*(std::exp(gm*(para[0]-t))-gm*(para[0]-t)-1))));
+  return(R::qnorm(1.0-(1.0-(nakagami.cdf(u,para(1),para(0))-nakagami.cdf(l,para(1),para(0))))/2,0.0,1.0,1,0)/(3.0*std::sqrt(1.0+(2/(pow(para[1],2)*pow(gm,2)))*(std::exp(gm*(para[0]-t))-gm*(para[0]-t)-1))));
 }
 
-
-  
-// The mean of ND
-// [[Rcpp::export]]
-double spmk_mu(double x, double y){
-  return (gammafun.my_gamma(x+0.5)/gammafun.my_gamma(x))*std::sqrt(y/x);
-}
-
-// The standard deviation of ND
-// [[Rcpp::export]]
-double spmk_sig(double x, double y){
-  return(std::sqrt(y-std::pow((gammafun.my_gamma(x+0.5)/gammafun.my_gamma(x))*std::sqrt(y/x),2)));
-};
 
 // [[Rcpp::export]]
 Rcpp::NumericVector spmk_grad(Rcpp::NumericVector para, double l, double u, double t, double gm){
@@ -91,7 +79,7 @@ Rcpp::NumericVector spmk_grad(Rcpp::NumericVector para, double l, double u, doub
   
   double A=std::exp(gm*(nu-t))-gm*(nu-t)-1.0;
   double B=1.0+2.0*A/(pow(gm,2.0)*pow(xi,2.0));
-  double p=1.0-(nakagami.cdf(u,{xi,nu})-nakagami.cdf(l,{xi,nu}));
+  double p=1.0-(nakagami.cdf(u,xi,nu)-nakagami.cdf(l,xi,nu));
   double Q=R::qnorm(1.0-p/2.0,0.0,1.0,1.0,0);
   double q=1.0/R::dnorm(R::qnorm(1.0-p/2.0,0.0,1.0,1.0,0.0),0.0,1.0,0.0);
   double I_l = integrate(f1, nu*l*l/xi, 1000, err_est1, err_code1);
@@ -203,7 +191,7 @@ double like(Rcpp::NumericVector para,
   double lk=1;
   int m=X.size();
   for(int i=0;i<m;i++){
-    lk *= nakagami.pdf(X(i),para)*pow(nakagami.sur(X(i),para),R(i));
+    lk *= nakagami.pdf(X(i),para(1),para(0))*pow(nakagami.sur(X(i),para(1),para(0)),R(i));
   }
   return lk;
 }  
@@ -218,7 +206,7 @@ double loglike(Rcpp::NumericVector para,
   double lk=1;
   int m=X.size();
   for(int i=0;i<m;i++){
-    lk *= nakagami.pdf(X(i),para)*pow(nakagami.sur(X(i),para),R(i));
+    lk *= nakagami.pdf(X(i),para(1),para(0))*pow(nakagami.sur(X(i),para(1),para(0)),R(i));
   }
   return std::log(lk);
 }  
@@ -232,7 +220,7 @@ double logpostlk(Rcpp::NumericVector para,
   double lk=1;
   int m=X.size();
   for(int i=0;i<m;i++){
-    lk *= nakagami.pdf(X(i),para)*pow(nakagami.sur(X(i),para),R(i));
+    lk *= nakagami.pdf(X(i),para(1),para(0))*pow(nakagami.sur(X(i),para(1),para(0)),R(i));
   }
   return std::log(lk)+std::log(prior(para));
 }  
@@ -244,9 +232,9 @@ double mps(Rcpp::NumericVector para,
   
   // Compute objective value
   int m=X.size();
-  double mp=nakagami.sur(X(m-1),para)*nakagami.cdf(X(0),para)*pow(nakagami.sur(X(0),para),R(0));
+  double mp=nakagami.sur(X(m-1),para(1),para(0))*nakagami.cdf(X(0),para(1),para(0))*pow(nakagami.sur(X(0),para(1),para(0)),R(0));
   for(int i=1;i<m;i++){
-    mp *= (nakagami.cdf(X(i),para)-nakagami.cdf(X(i-1),para))*pow(nakagami.sur(X(i),para),R(i));
+    mp *= (nakagami.cdf(X(i),para(1),para(0))-nakagami.cdf(X(i-1),para(1),para(0)))*pow(nakagami.sur(X(i),para(1),para(0)),R(i));
   }
   return mp;
 }
@@ -258,9 +246,9 @@ double logmps(Rcpp::NumericVector para,
   
   // Compute objective value
   int m=X.size();
-  double mp=nakagami.sur(X(m-1),para)*nakagami.cdf(X(0),para)*pow(nakagami.sur(X(0),para),R(0));
+  double mp=nakagami.sur(X(m-1),para(1),para(0))*nakagami.cdf(X(0),para(1),para(0))*pow(nakagami.sur(X(0),para(1),para(0)),R(0));
   for(int i=1;i<m;i++){
-    mp *= (nakagami.cdf(X(i),para)-nakagami.cdf(X(i-1),para))*pow(nakagami.sur(X(i),para),R(i));
+    mp *= (nakagami.cdf(X(i),para(1),para(0))-nakagami.cdf(X(i-1),para(1),para(0)))*pow(nakagami.sur(X(i),para(1),para(0)),R(i));
   }
   return std::log(mp);
 }
@@ -272,9 +260,9 @@ double logpostps(Rcpp::NumericVector para,
   
   // Compute objective value
   int m=X.size();
-  double mp=nakagami.sur(X(m-1),para)*nakagami.cdf(X(0),para)*pow(nakagami.sur(X(0),para),R(0));
+  double mp=nakagami.sur(X(m-1),para(1),para(0))*nakagami.cdf(X(0),para(1),para(0))*pow(nakagami.sur(X(0),para(1),para(0)),R(0));
   for(int i=1;i<m;i++){
-    mp *= (nakagami.cdf(X(i),para)-nakagami.cdf(X(i-1),para))*pow(nakagami.sur(X(i),para),R(i));
+    mp *= (nakagami.cdf(X(i),para(1),para(0))-nakagami.cdf(X(i-1),para(1),para(0)))*pow(nakagami.sur(X(i),para(1),para(0)),R(i));
   }
   return std::log(mp)+std::log(prior(para));
 }
@@ -336,21 +324,6 @@ public:
                  Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(R)))*prior(Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(y))));
   }
 };
-
-// [[Rcpp::export]]
-NumericVector my_as_mcmc(NumericVector x){
-  Rcpp::Function as_mcmc_rcpp("as.mcmc");
-  Rcpp::NumericVector res=as_mcmc_rcpp(x);
-  return res;
-}
-
-// [[Rcpp::export]]
-NumericVector my_HPD(NumericVector x){
-  Rcpp::Function HPD_rcpp("HPDinterval");
-  Rcpp::NumericVector res=HPD_rcpp(x);
-  return res;
-}
-
 
 class TK_Obj : public Functor {
   private: arma::vec X;
@@ -427,6 +400,7 @@ public:
     };
 };
 
+
 double cloglike(Rcpp::NumericVector para,
                 Rcpp::NumericVector X, 
                 Rcpp::NumericVector R,
@@ -464,7 +438,8 @@ public:
 // Information matrix using missing information principle
 // [[Rcpp::export]]
 NumericMatrix inform(Rcpp::NumericVector para, 
-                     Rcpp::NumericVector X, Rcpp::NumericVector R, 
+                     Rcpp::NumericVector X, 
+                     Rcpp::NumericVector R, 
                      double lower, double upper){
   double nu=para(0);
   double xi=para(1);

@@ -24,16 +24,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // MSE
-double MSE(double eta, Rcpp::NumericVector eta_hat, std::string type, double q);
-RcppExport SEXP _NakaPT2CD_MSE(SEXP etaSEXP, SEXP eta_hatSEXP, SEXP typeSEXP, SEXP qSEXP) {
+double MSE(double xi, Rcpp::NumericVector xi_hat, std::string type, double q);
+RcppExport SEXP _NakaPT2CD_MSE(SEXP xiSEXP, SEXP xi_hatSEXP, SEXP typeSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type eta(etaSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type eta_hat(eta_hatSEXP);
+    Rcpp::traits::input_parameter< double >::type xi(xiSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type xi_hat(xi_hatSEXP);
     Rcpp::traits::input_parameter< std::string >::type type(typeSEXP);
     Rcpp::traits::input_parameter< double >::type q(qSEXP);
-    rcpp_result_gen = Rcpp::wrap(MSE(eta, eta_hat, type, q));
+    rcpp_result_gen = Rcpp::wrap(MSE(xi, xi_hat, type, q));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -49,30 +49,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type t(tSEXP);
     Rcpp::traits::input_parameter< double >::type gm(gmSEXP);
     rcpp_result_gen = Rcpp::wrap(spmk_fun(para, l, u, t, gm));
-    return rcpp_result_gen;
-END_RCPP
-}
-// spmk_mu
-double spmk_mu(double x, double y);
-RcppExport SEXP _NakaPT2CD_spmk_mu(SEXP xSEXP, SEXP ySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type x(xSEXP);
-    Rcpp::traits::input_parameter< double >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(spmk_mu(x, y));
-    return rcpp_result_gen;
-END_RCPP
-}
-// spmk_sig
-double spmk_sig(double x, double y);
-RcppExport SEXP _NakaPT2CD_spmk_sig(SEXP xSEXP, SEXP ySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type x(xSEXP);
-    Rcpp::traits::input_parameter< double >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(spmk_sig(x, y));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -169,28 +145,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// my_as_mcmc
-NumericVector my_as_mcmc(NumericVector x);
-RcppExport SEXP _NakaPT2CD_my_as_mcmc(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(my_as_mcmc(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// my_HPD
-NumericVector my_HPD(NumericVector x);
-RcppExport SEXP _NakaPT2CD_my_HPD(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(my_HPD(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 // inform
 NumericMatrix inform(Rcpp::NumericVector para, Rcpp::NumericVector X, Rcpp::NumericVector R, double lower, double upper);
 RcppExport SEXP _NakaPT2CD_inform(SEXP paraSEXP, SEXP XSEXP, SEXP RSEXP, SEXP lowerSEXP, SEXP upperSEXP) {
@@ -265,33 +219,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// MH_sample
-Rcpp::List MH_sample(Rcpp::NumericVector True_par, Rcpp::NumericVector X, Rcpp::NumericVector R, double l, double u, double t, double gm, double q, double c, Rcpp::NumericVector para, std::string type, int MC_size, int MC_burn, Rcpp::NumericVector se, double fact, bool verbose, bool display_progress);
-RcppExport SEXP _NakaPT2CD_MH_sample(SEXP True_parSEXP, SEXP XSEXP, SEXP RSEXP, SEXP lSEXP, SEXP uSEXP, SEXP tSEXP, SEXP gmSEXP, SEXP qSEXP, SEXP cSEXP, SEXP paraSEXP, SEXP typeSEXP, SEXP MC_sizeSEXP, SEXP MC_burnSEXP, SEXP seSEXP, SEXP factSEXP, SEXP verboseSEXP, SEXP display_progressSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type True_par(True_parSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type X(XSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type R(RSEXP);
-    Rcpp::traits::input_parameter< double >::type l(lSEXP);
-    Rcpp::traits::input_parameter< double >::type u(uSEXP);
-    Rcpp::traits::input_parameter< double >::type t(tSEXP);
-    Rcpp::traits::input_parameter< double >::type gm(gmSEXP);
-    Rcpp::traits::input_parameter< double >::type q(qSEXP);
-    Rcpp::traits::input_parameter< double >::type c(cSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type para(paraSEXP);
-    Rcpp::traits::input_parameter< std::string >::type type(typeSEXP);
-    Rcpp::traits::input_parameter< int >::type MC_size(MC_sizeSEXP);
-    Rcpp::traits::input_parameter< int >::type MC_burn(MC_burnSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type se(seSEXP);
-    Rcpp::traits::input_parameter< double >::type fact(factSEXP);
-    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    Rcpp::traits::input_parameter< bool >::type display_progress(display_progressSEXP);
-    rcpp_result_gen = Rcpp::wrap(MH_sample(True_par, X, R, l, u, t, gm, q, c, para, type, MC_size, MC_burn, se, fact, verbose, display_progress));
-    return rcpp_result_gen;
-END_RCPP
-}
 // TK
 Rcpp::List TK(arma::vec True_para, arma::vec X, arma::vec R, double L, double U, double T, double GM, double q, double c, arma::vec para, std::string type);
 RcppExport SEXP _NakaPT2CD_TK(SEXP True_paraSEXP, SEXP XSEXP, SEXP RSEXP, SEXP LSEXP, SEXP USEXP, SEXP TSEXP, SEXP GMSEXP, SEXP qSEXP, SEXP cSEXP, SEXP paraSEXP, SEXP typeSEXP) {
@@ -318,8 +245,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_NakaPT2CD_arma_sort", (DL_FUNC) &_NakaPT2CD_arma_sort, 1},
     {"_NakaPT2CD_MSE", (DL_FUNC) &_NakaPT2CD_MSE, 4},
     {"_NakaPT2CD_spmk_fun", (DL_FUNC) &_NakaPT2CD_spmk_fun, 5},
-    {"_NakaPT2CD_spmk_mu", (DL_FUNC) &_NakaPT2CD_spmk_mu, 2},
-    {"_NakaPT2CD_spmk_sig", (DL_FUNC) &_NakaPT2CD_spmk_sig, 2},
     {"_NakaPT2CD_spmk_grad", (DL_FUNC) &_NakaPT2CD_spmk_grad, 5},
     {"_NakaPT2CD_like", (DL_FUNC) &_NakaPT2CD_like, 3},
     {"_NakaPT2CD_loglike", (DL_FUNC) &_NakaPT2CD_loglike, 3},
@@ -327,13 +252,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_NakaPT2CD_mps", (DL_FUNC) &_NakaPT2CD_mps, 3},
     {"_NakaPT2CD_logmps", (DL_FUNC) &_NakaPT2CD_logmps, 3},
     {"_NakaPT2CD_logpostps", (DL_FUNC) &_NakaPT2CD_logpostps, 3},
-    {"_NakaPT2CD_my_as_mcmc", (DL_FUNC) &_NakaPT2CD_my_as_mcmc, 1},
-    {"_NakaPT2CD_my_HPD", (DL_FUNC) &_NakaPT2CD_my_HPD, 1},
     {"_NakaPT2CD_inform", (DL_FUNC) &_NakaPT2CD_inform, 5},
     {"_NakaPT2CD_cscore", (DL_FUNC) &_NakaPT2CD_cscore, 5},
     {"_NakaPT2CD_Estim", (DL_FUNC) &_NakaPT2CD_Estim, 12},
     {"_NakaPT2CD_EM_Alg", (DL_FUNC) &_NakaPT2CD_EM_Alg, 12},
-    {"_NakaPT2CD_MH_sample", (DL_FUNC) &_NakaPT2CD_MH_sample, 17},
     {"_NakaPT2CD_TK", (DL_FUNC) &_NakaPT2CD_TK, 11},
     {NULL, NULL, 0}
 };
